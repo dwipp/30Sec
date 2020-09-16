@@ -14,11 +14,16 @@ protocol SelectionModelProtocol {
     var action:SelectionActionProtocol? {get set}
     func cropVideo(_ videoUrl:URL, start:Double, end:Double, completion:@escaping (URL?)->())
     func getDuration(_ videoUrl:URL) -> Double
-    func getSize(_ data:Data) -> Double
+    func saveToPhotoLibrary(_ outputURL:URL, type:Type, completion:@escaping (URL?)->())
 }
 
 protocol SelectionActionProtocol {
     
+}
+
+enum Type {
+    case record
+    case album
 }
 
 class SelectionViewModel: SelectionModelProtocol {
@@ -53,7 +58,7 @@ class SelectionViewModel: SelectionModelProtocol {
             switch exportSession.status {
             case .completed:
                 print("exported at \(outputURL)")
-                self.saveToPhotoLibrary(outputURL) { (url) in
+                self.saveToPhotoLibrary(outputURL, type: .album) { (url) in
                     completion(url)
                 }
             case .failed:
@@ -69,7 +74,7 @@ class SelectionViewModel: SelectionModelProtocol {
         }
     }
     
-    private func saveToPhotoLibrary(_ outputURL:URL, completion:@escaping (URL?)->()){
+    func saveToPhotoLibrary(_ outputURL:URL, type:Type, completion:@escaping (URL?)->()){
         var localId:String?
         PHPhotoLibrary.shared().performChanges({
             let request = PHAssetChangeRequest.creationRequestForAssetFromVideo(atFileURL: outputURL)
@@ -79,7 +84,9 @@ class SelectionViewModel: SelectionModelProtocol {
                 if let localId = localId {
                     let result = PHAsset.fetchAssets(withLocalIdentifiers: [localId], options: nil).firstObject
                     result?.getURL(completionHandler: { (url) in
-                        try? FileManager.default.removeItem(at: outputURL)
+                        if type == .album {
+                            try? FileManager.default.removeItem(at: outputURL)
+                        }
                         completion(url)
                     })
                 }else {
@@ -97,11 +104,6 @@ class SelectionViewModel: SelectionModelProtocol {
         let durationTime = CMTimeGetSeconds(duration)
         let rounded = Double(round(durationTime*100)/100)
         return rounded
-    }
-    
-    func getSize(_ data: Data) -> Double {
-        let size = Double(data.count / 1048576)
-        return size
     }
     
 }

@@ -13,14 +13,13 @@ import AVKit
 
 class ViewController: UIViewController, SelectionActionProtocol {
     private var viewmodel: SelectionModelProtocol
-    private let lblVideoSize = UILabel()
     private let lblVideoDuration = UILabel()
-    private let lblCroppedSize = UILabel()
     private let lblCroppedDuration = UILabel()
     private let btnPlay = UIButton()
     private let separator = UIView()
     
     fileprivate var videoUrl:URL?
+    fileprivate let picker = UIImagePickerController()
     
     init() {
         self.viewmodel = SelectionViewModel()
@@ -66,20 +65,11 @@ class ViewController: UIViewController, SelectionActionProtocol {
             make.height.equalTo(40)
         }
         
-        view.addSubview(lblVideoSize)
-        lblVideoSize.alpha = 0.0
-        lblVideoSize.snp.makeConstraints { (make) in
-            make.top.equalTo(view.safeAreaLayoutGuide.snp.topMargin).offset(20)
-            make.right.equalTo(btnPlay.snp.right).offset(-8)
-            make.left.equalTo(view.safeAreaLayoutGuide.snp.leftMargin).offset(16)
-            make.height.equalTo(20)
-        }
-        
         view.addSubview(lblVideoDuration)
         lblVideoDuration.alpha = 0.0
         lblVideoDuration.snp.makeConstraints { (make) in
-            make.top.equalTo(lblVideoSize.snp.bottom).offset(8)
-            make.right.equalTo(btnPlay.snp.right).offset(-8)
+        make.top.equalTo(view.safeAreaLayoutGuide.snp.topMargin).offset(20)
+            make.right.equalTo(btnPlay.snp.left).offset(-8)
             make.left.equalTo(view.safeAreaLayoutGuide.snp.leftMargin).offset(16)
             make.height.equalTo(20)
             
@@ -91,42 +81,33 @@ class ViewController: UIViewController, SelectionActionProtocol {
         separator.snp.makeConstraints { (make) in
             make.top.equalTo(lblVideoDuration.snp.bottom).offset(8)
             make.left.equalTo(view.safeAreaLayoutGuide.snp.leftMargin).offset(16)
-            make.right.equalTo(btnPlay.snp.right).offset(-8)
+            make.right.equalTo(btnPlay.snp.left).offset(-8)
             make.height.equalTo(0.5)
-        }
-        
-        view.addSubview(lblCroppedSize)
-        lblCroppedSize.alpha = 0.0
-        lblCroppedSize.snp.makeConstraints { (make) in
-        make.top.equalTo(separator.snp.bottom).offset(8)
-            make.right.equalTo(btnPlay.snp.right).offset(-8)
-            make.left.equalTo(view.safeAreaLayoutGuide.snp.leftMargin).offset(16)
-            make.height.equalTo(20)
         }
         
         view.addSubview(lblCroppedDuration)
         lblCroppedDuration.alpha = 0.0
         lblCroppedDuration.snp.makeConstraints { (make) in
-            make.top.equalTo(lblCroppedSize.snp.bottom).offset(8)
+            make.top.equalTo(separator.snp.bottom).offset(8)
             make.right.equalTo(btnPlay.snp.right).offset(-8)
             make.left.equalTo(view.safeAreaLayoutGuide.snp.leftMargin).offset(16)
             make.height.equalTo(20)
             
         }
+        
+        picker.delegate = self
+    }
+    
+    private func hideVideoProperties(){
+        lblVideoDuration.alpha = 0.0
+        btnPlay.alpha = 0.0
+        separator.alpha = 0.0
+        lblCroppedDuration.alpha = 0.0
+        videoUrl = nil
     }
     
     fileprivate func showVideoProperties(){
-        var videoData = Data()
-        
         guard let url = videoUrl else {return}
-        
-        do {
-            videoData = try Data(contentsOf: url)
-        }catch {
-            return
-        }
-        lblVideoSize.text = "File size: \(viewmodel.getSize(videoData)) MB"
-        lblVideoSize.alpha = 1.0
         let duration = viewmodel.getDuration(url)
         lblVideoDuration.text = "Video duration: \(duration) seconds"
         lblVideoDuration.alpha = 1.0
@@ -135,18 +116,11 @@ class ViewController: UIViewController, SelectionActionProtocol {
             self.viewmodel.cropVideo(url, start: 0, end: 30.0) { [weak self] (newUrl) in
                 guard let croppedUrl = newUrl else {return}
                 self?.videoUrl = croppedUrl
-                do {
-                    videoData = try Data(contentsOf: croppedUrl)
-                    DispatchQueue.main.async {
-                        self?.separator.alpha = 1.0
-                        self?.lblCroppedSize.text = "Cropped file size: \(self?.viewmodel.getSize(videoData) ?? 0) MB"
-                        self?.lblCroppedSize.alpha = 1.0
-                        let duration = self?.viewmodel.getDuration(croppedUrl) ?? 0
-                        self?.lblCroppedDuration.text = "Cropped duration: \(duration) seconds"
-                        self?.lblCroppedDuration.alpha = 1.0
-                    }
-                }catch {
-                    return
+                DispatchQueue.main.async {
+                    self?.separator.alpha = 1.0
+                    let duration = self?.viewmodel.getDuration(croppedUrl) ?? 0
+                    self?.lblCroppedDuration.text = "Cropped duration: \(duration) seconds"
+                    self?.lblCroppedDuration.alpha = 1.0
                 }
             }
         }
@@ -169,8 +143,9 @@ class ViewController: UIViewController, SelectionActionProtocol {
             print("Album")
             self?.openAlbum()
         }))
-        alert.addAction(UIAlertAction(title: "Camera", style: .default, handler: { (action) in
+        alert.addAction(UIAlertAction(title: "Camera", style: .default, handler: { [weak self] (action) in
             print("Camera")
+            self?.openCamera()
         }))
         alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
         self.present(alert, animated: true, completion: nil)
@@ -178,10 +153,21 @@ class ViewController: UIViewController, SelectionActionProtocol {
     
     func openAlbum(){
         if UIImagePickerController.isSourceTypeAvailable(.savedPhotosAlbum){
-            let picker = UIImagePickerController()
-            picker.delegate = self
+            hideVideoProperties()
             picker.sourceType = .savedPhotosAlbum
             picker.mediaTypes = ["public.movie"]
+            self.present(picker, animated: true, completion: nil)
+        }else {
+            
+        }
+    }
+    
+    func openCamera(){
+        if UIImagePickerController.isSourceTypeAvailable(.camera){
+            hideVideoProperties()
+            picker.sourceType = .camera
+            picker.mediaTypes = ["public.movie"]
+            picker.videoMaximumDuration = 30
             self.present(picker, animated: true, completion: nil)
         }else {
             
@@ -193,7 +179,16 @@ class ViewController: UIViewController, SelectionActionProtocol {
 extension ViewController: UIImagePickerControllerDelegate & UINavigationControllerDelegate {
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
         videoUrl = info[UIImagePickerController.InfoKey.mediaURL] as? URL
-        self.showVideoProperties()
+        if picker.sourceType == .camera, let url = videoUrl {
+            self.viewmodel.saveToPhotoLibrary(url, type: .record) { [weak self] (savedUrl) in
+                DispatchQueue.main.async {
+                    self?.videoUrl = savedUrl
+                    self?.showVideoProperties()
+                }
+            }
+        }else {
+            self.showVideoProperties()
+        }
         picker.dismiss(animated: true, completion: nil)
     }
     
