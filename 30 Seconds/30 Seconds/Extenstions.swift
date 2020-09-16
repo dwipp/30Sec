@@ -11,15 +11,6 @@ import Photos
 import UIKit
 
 extension PHAsset {
-    var fileSize: Double {
-        get {
-            let resource = PHAssetResource.assetResources(for: self)
-            let imageSizeByte = resource.first?.value(forKey: "fileSize") as? Double ?? 0
-            let imageSizeMB = imageSizeByte / (1024.0*1024.0)
-            return imageSizeMB
-        }
-    }
-    
     func getURL(completionHandler : @escaping ((_ responseURL : URL?) -> Void)){
         if self.mediaType == .image {
             let options: PHContentEditingInputRequestOptions = PHContentEditingInputRequestOptions()

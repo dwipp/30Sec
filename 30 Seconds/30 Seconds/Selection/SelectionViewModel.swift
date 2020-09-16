@@ -13,7 +13,8 @@ import Photos
 protocol SelectionModelProtocol {
     var action:SelectionActionProtocol? {get set}
     func cropVideo(_ videoUrl:URL, start:Double, end:Double, completion:@escaping (URL?)->())
-    
+    func getDuration(_ videoUrl:URL) -> Double
+    func getSize(_ data:Data) -> Double
 }
 
 protocol SelectionActionProtocol {
@@ -40,9 +41,6 @@ class SelectionViewModel: SelectionModelProtocol {
             completion(nil)
         }
 
-        //Remove existing file
-        try? fileManager.removeItem(at: outputURL)
-
         guard let exportSession = AVAssetExportSession(asset: asset, presetName: AVAssetExportPresetHighestQuality) else { return }
         exportSession.outputURL = outputURL
         exportSession.outputFileType = .mov
@@ -55,50 +53,9 @@ class SelectionViewModel: SelectionModelProtocol {
             switch exportSession.status {
             case .completed:
                 print("exported at \(outputURL)")
-                var localId:String?
-                PHPhotoLibrary.shared().performChanges({
-                    let request = PHAssetChangeRequest.creationRequestForAssetFromVideo(atFileURL: outputURL)
-                    localId = request?.placeholderForCreatedAsset?.localIdentifier
-                }) { saved, error in
-                    if saved {
-                        if let localId = localId {
-
-                            let result = PHAsset.fetchAssets(withLocalIdentifiers: [localId], options: nil).firstObject
-                            print("duration: \(result?.duration)")
-                            print("size: \(result?.fileSize)")
-                            result?.getURL(completionHandler: { (url) in
-                                try? fileManager.removeItem(at: outputURL)
-                                completion(url)
-                            })
-                            
-                            
-//                            let assets = result.objectsAtIndexes(NSIndexSet(indexesInRange: NSRange(location: 0, length: result.count)) as IndexSet) as? [PHAsset] ?? []
-
-//                            if let asset = assets.first {
-//                                // Do something with result
-//                            }
-                        }else {
-                            completion(nil)
-                        }
-                        
-                        /*
-                        let fetchOptions = PHFetchOptions()
-                        fetchOptions.sortDescriptors = [NSSortDescriptor(key: "creationDate", ascending: false)]
-
-                        let fetchResult = PHAsset.fetchAssets(with: .video, options: fetchOptions).firstObject
-                        // fetchResult is your latest video PHAsset
-                        // To fetch latest image  replace .video with .image
-                        print("duration: \(fetchResult?.duration)")
-                        print("size: \(fetchResult?.fileSize)")
-                        fetchResult?.getURL(completionHandler: { (url) in
-                            completion(url)
-                        })*/
-                    }else {
-                        completion(nil)
-                    }
+                self.saveToPhotoLibrary(outputURL) { (url) in
+                    completion(url)
                 }
-//
-//                completion(outputURL)
             case .failed:
                 print("failed \(exportSession.error.debugDescription)")
                 completion(nil)
@@ -110,6 +67,41 @@ class SelectionViewModel: SelectionModelProtocol {
                 break
             }
         }
+    }
+    
+    private func saveToPhotoLibrary(_ outputURL:URL, completion:@escaping (URL?)->()){
+        var localId:String?
+        PHPhotoLibrary.shared().performChanges({
+            let request = PHAssetChangeRequest.creationRequestForAssetFromVideo(atFileURL: outputURL)
+            localId = request?.placeholderForCreatedAsset?.localIdentifier
+        }) { saved, error in
+            if saved {
+                if let localId = localId {
+                    let result = PHAsset.fetchAssets(withLocalIdentifiers: [localId], options: nil).firstObject
+                    result?.getURL(completionHandler: { (url) in
+                        try? FileManager.default.removeItem(at: outputURL)
+                        completion(url)
+                    })
+                }else {
+                    completion(nil)
+                }
+            }else {
+                completion(nil)
+            }
+        }
+    }
+    
+    func getDuration(_ videoUrl: URL) -> Double {
+        let asset = AVAsset(url: videoUrl)
+        let duration = asset.duration
+        let durationTime = CMTimeGetSeconds(duration)
+        let rounded = Double(round(durationTime*100)/100)
+        return rounded
+    }
+    
+    func getSize(_ data: Data) -> Double {
+        let size = Double(data.count / 1048576)
+        return size
     }
     
 }

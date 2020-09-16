@@ -15,7 +15,11 @@ class ViewController: UIViewController, SelectionActionProtocol {
     private var viewmodel: SelectionModelProtocol
     private let lblVideoSize = UILabel()
     private let lblVideoDuration = UILabel()
+    private let lblCroppedSize = UILabel()
+    private let lblCroppedDuration = UILabel()
     private let btnPlay = UIButton()
+    private let separator = UIView()
+    
     fileprivate var videoUrl:URL?
     
     init() {
@@ -80,6 +84,35 @@ class ViewController: UIViewController, SelectionActionProtocol {
             make.height.equalTo(20)
             
         }
+        
+        view.addSubview(separator)
+        separator.backgroundColor = .systemGray3
+        separator.alpha = 0.0
+        separator.snp.makeConstraints { (make) in
+            make.top.equalTo(lblVideoDuration.snp.bottom).offset(8)
+            make.left.equalTo(view.safeAreaLayoutGuide.snp.leftMargin).offset(16)
+            make.right.equalTo(btnPlay.snp.right).offset(-8)
+            make.height.equalTo(0.5)
+        }
+        
+        view.addSubview(lblCroppedSize)
+        lblCroppedSize.alpha = 0.0
+        lblCroppedSize.snp.makeConstraints { (make) in
+        make.top.equalTo(separator.snp.bottom).offset(8)
+            make.right.equalTo(btnPlay.snp.right).offset(-8)
+            make.left.equalTo(view.safeAreaLayoutGuide.snp.leftMargin).offset(16)
+            make.height.equalTo(20)
+        }
+        
+        view.addSubview(lblCroppedDuration)
+        lblCroppedDuration.alpha = 0.0
+        lblCroppedDuration.snp.makeConstraints { (make) in
+            make.top.equalTo(lblCroppedSize.snp.bottom).offset(8)
+            make.right.equalTo(btnPlay.snp.right).offset(-8)
+            make.left.equalTo(view.safeAreaLayoutGuide.snp.leftMargin).offset(16)
+            make.height.equalTo(20)
+            
+        }
     }
     
     fileprivate func showVideoProperties(){
@@ -92,24 +125,25 @@ class ViewController: UIViewController, SelectionActionProtocol {
         }catch {
             return
         }
-        let size = Double(videoData.count / 1048576)
-        lblVideoSize.text = "File size: \(size) MB"
+        lblVideoSize.text = "File size: \(viewmodel.getSize(videoData)) MB"
         lblVideoSize.alpha = 1.0
-        let asset = AVAsset(url: url)
-        let duration = asset.duration
-        let durationTime = CMTimeGetSeconds(duration)
-        let rounded = Double(round(durationTime*100)/100)
-        lblVideoDuration.text = "Video duration: \(rounded) seconds"
+        let duration = viewmodel.getDuration(url)
+        lblVideoDuration.text = "Video duration: \(duration) seconds"
         lblVideoDuration.alpha = 1.0
         btnPlay.alpha = 1.0
-        if durationTime > 30.0 {
+        if duration > 30.0 {
             self.viewmodel.cropVideo(url, start: 0, end: 30.0) { [weak self] (newUrl) in
                 guard let croppedUrl = newUrl else {return}
                 self?.videoUrl = croppedUrl
                 do {
                     videoData = try Data(contentsOf: croppedUrl)
                     DispatchQueue.main.async {
-                        self?.showVideoProperties()
+                        self?.separator.alpha = 1.0
+                        self?.lblCroppedSize.text = "Cropped file size: \(self?.viewmodel.getSize(videoData) ?? 0) MB"
+                        self?.lblCroppedSize.alpha = 1.0
+                        let duration = self?.viewmodel.getDuration(croppedUrl) ?? 0
+                        self?.lblCroppedDuration.text = "Cropped duration: \(duration) seconds"
+                        self?.lblCroppedDuration.alpha = 1.0
                     }
                 }catch {
                     return
