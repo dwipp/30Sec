@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		1C50E6E992E750810CA347A2 /* Pods_30_Seconds.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9EC2238E02F8032AF5FD9609 /* Pods_30_Seconds.framework */; };
+		45834DCA251275D00039D340 /* Extenstions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45834DC9251275D00039D340 /* Extenstions.swift */; };
 		45C68EA42512475A00BF8BB6 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45C68EA32512475A00BF8BB6 /* AppDelegate.swift */; };
 		45C68EA62512475A00BF8BB6 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45C68EA52512475A00BF8BB6 /* SceneDelegate.swift */; };
 		45C68EA82512475A00BF8BB6 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45C68EA72512475A00BF8BB6 /* ViewController.swift */; };
@@ -33,6 +34,7 @@
 		0548E90C5D755C35725BCCBD /* Pods_30_SecondsTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_30_SecondsTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		104796DEE25DC70E9EF27450 /* Pods-30 SecondsTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-30 SecondsTests.release.xcconfig"; path = "Target Support Files/Pods-30 SecondsTests/Pods-30 SecondsTests.release.xcconfig"; sourceTree = "<group>"; };
 		1661B4AB205EE97017A7070E /* Pods-30 Seconds.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-30 Seconds.debug.xcconfig"; path = "Target Support Files/Pods-30 Seconds/Pods-30 Seconds.debug.xcconfig"; sourceTree = "<group>"; };
+		45834DC9251275D00039D340 /* Extenstions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extenstions.swift; sourceTree = "<group>"; };
 		45C68EA02512475A00BF8BB6 /* 30 Seconds.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "30 Seconds.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		45C68EA32512475A00BF8BB6 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		45C68EA52512475A00BF8BB6 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
@@ -101,6 +103,7 @@
 				45C68EAC2512475B00BF8BB6 /* Assets.xcassets */,
 				45C68EAE2512475B00BF8BB6 /* LaunchScreen.storyboard */,
 				45C68EB12512475B00BF8BB6 /* Info.plist */,
+				45834DC9251275D00039D340 /* Extenstions.swift */,
 			);
 			path = "30 Seconds";
 			sourceTree = "<group>";
@@ -319,6 +322,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				45C68EA82512475A00BF8BB6 /* ViewController.swift in Sources */,
+				45834DCA251275D00039D340 /* Extenstions.swift in Sources */,
 				45C68EC82512498E00BF8BB6 /* SelectionViewModel.swift in Sources */,
 				45C68EA42512475A00BF8BB6 /* AppDelegate.swift in Sources */,
 				45C68EA62512475A00BF8BB6 /* SceneDelegate.swift in Sources */,
