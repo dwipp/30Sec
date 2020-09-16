@@ -9,13 +9,13 @@
 import UIKit
 import SnapKit
 import AVFoundation
-//impo
+import AVKit
 
 class ViewController: UIViewController, SelectionActionProtocol {
     private var viewmodel: SelectionModelProtocol
-    fileprivate let lblVideoSize = UILabel()
-    fileprivate let lblVideoDuration = UILabel()
-    fileprivate var videoData = Data()
+    private let lblVideoSize = UILabel()
+    private let lblVideoDuration = UILabel()
+    private let btnPlay = UIButton()
     fileprivate var videoUrl:URL?
     
     init() {
@@ -41,12 +41,24 @@ class ViewController: UIViewController, SelectionActionProtocol {
         let btnSelect = UIButton()
         view.addSubview(btnSelect)
         btnSelect.setTitle("Select Video", for: .normal)
-        btnSelect.setTitleColor(.systemBlue, for: .normal)
+        btnSelect.inStyle()
         btnSelect.addTarget(self, action: #selector(self.didTapSelection(_:)), for: .touchUpInside)
         btnSelect.snp.makeConstraints { (make) in
             make.bottom.equalTo(view.safeAreaLayoutGuide.snp.bottomMargin).offset(-20)
-            make.left.equalToSuperview().offset(20)
-            make.right.equalToSuperview().offset(-20)
+            make.centerX.equalToSuperview()
+            make.height.equalTo(40)
+            make.width.equalTo(250)
+        }
+        
+        view.addSubview(btnPlay)
+        btnPlay.alpha = 0.0
+        btnPlay.setTitle("Play", for: .normal)
+        btnPlay.inStyle()
+        btnPlay.addTarget(self, action: #selector(self.didTapPlay(_:)), for: .touchUpInside)
+        btnPlay.snp.makeConstraints { (make) in
+            make.right.equalTo(view.safeAreaLayoutGuide.snp.rightMargin).offset(-16)
+            make.top.equalTo(view.safeAreaLayoutGuide.snp.topMargin).offset(20)
+            make.width.equalTo(80)
             make.height.equalTo(40)
         }
         
@@ -54,8 +66,8 @@ class ViewController: UIViewController, SelectionActionProtocol {
         lblVideoSize.alpha = 0.0
         lblVideoSize.snp.makeConstraints { (make) in
             make.top.equalTo(view.safeAreaLayoutGuide.snp.topMargin).offset(20)
-            make.left.equalToSuperview().offset(16)
-            make.right.equalToSuperview().offset(-16)
+            make.right.equalTo(btnPlay.snp.right).offset(-8)
+            make.left.equalTo(view.safeAreaLayoutGuide.snp.leftMargin).offset(16)
             make.height.equalTo(20)
         }
         
@@ -63,28 +75,58 @@ class ViewController: UIViewController, SelectionActionProtocol {
         lblVideoDuration.alpha = 0.0
         lblVideoDuration.snp.makeConstraints { (make) in
             make.top.equalTo(lblVideoSize.snp.bottom).offset(8)
-            make.left.equalToSuperview().offset(16)
-            make.right.equalToSuperview().offset(-16)
+            make.right.equalTo(btnPlay.snp.right).offset(-8)
+            make.left.equalTo(view.safeAreaLayoutGuide.snp.leftMargin).offset(16)
             make.height.equalTo(20)
             
         }
     }
     
     fileprivate func showVideoProperties(){
+        var videoData = Data()
+        
+        guard let url = videoUrl else {return}
+        
+        do {
+            videoData = try Data(contentsOf: url)
+        }catch {
+            return
+        }
         let size = Double(videoData.count / 1048576)
         lblVideoSize.text = "File size: \(size) MB"
         lblVideoSize.alpha = 1.0
-        
-        if let url = videoUrl {
-            let asset = AVAsset(url: url)
-            let duration = asset.duration
-            let durationTime = CMTimeGetSeconds(duration)
-            let rounded = Double(round(durationTime*100)/100)
-            lblVideoDuration.text = "Video duration: \(rounded) seconds"
-            lblVideoDuration.alpha = 1.0
+        let asset = AVAsset(url: url)
+        let duration = asset.duration
+        let durationTime = CMTimeGetSeconds(duration)
+        let rounded = Double(round(durationTime*100)/100)
+        lblVideoDuration.text = "Video duration: \(rounded) seconds"
+        lblVideoDuration.alpha = 1.0
+        btnPlay.alpha = 1.0
+        if durationTime > 30.0 {
+            self.viewmodel.cropVideo(url, start: 0, end: 30.0) { [weak self] (newUrl) in
+                guard let croppedUrl = newUrl else {return}
+                self?.videoUrl = croppedUrl
+                do {
+                    videoData = try Data(contentsOf: croppedUrl)
+                    DispatchQueue.main.async {
+                        self?.showVideoProperties()
+                    }
+                }catch {
+                    return
+                }
+            }
         }
         
-        
+    }
+    
+    @objc func didTapPlay(_ sender: UIButton){
+        guard let url = videoUrl else {return}
+        let player = AVPlayer(url: url)
+        let playerController = AVPlayerViewController()
+        playerController.player = player
+        self.present(playerController, animated: true) {
+            player.play()
+        }
     }
     
     @objc func didTapSelection(_ sender: UIButton){
@@ -93,9 +135,8 @@ class ViewController: UIViewController, SelectionActionProtocol {
             print("Album")
             self?.openAlbum()
         }))
-        alert.addAction(UIAlertAction(title: "Camera", style: .default, handler: { [weak self] (action) in
+        alert.addAction(UIAlertAction(title: "Camera", style: .default, handler: { (action) in
             print("Camera")
-            self?.viewmodel.openCamera()
         }))
         alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
         self.present(alert, animated: true, completion: nil)
@@ -118,20 +159,11 @@ class ViewController: UIViewController, SelectionActionProtocol {
 extension ViewController: UIImagePickerControllerDelegate & UINavigationControllerDelegate {
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
         videoUrl = info[UIImagePickerController.InfoKey.mediaURL] as? URL
-        if let videoURL = videoUrl {
-            do {
-                self.videoData = try Data(contentsOf: videoURL)
-                self.showVideoProperties()
-                
-                
-            }catch {
-                
-            }
-            picker.dismiss(animated: true, completion: nil)
-        }
+        self.showVideoProperties()
+        picker.dismiss(animated: true, completion: nil)
     }
     
     func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
-        
+        picker.dismiss(animated: true, completion: nil)
     }
 }
