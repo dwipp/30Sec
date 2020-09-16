@@ -1,0 +1,6 @@
+framework module Pods_30_SecondsTests {
+  umbrella header "Pods-30 SecondsTests-umbrella.h"
+
+  export *
+  module * { export * }
+}
