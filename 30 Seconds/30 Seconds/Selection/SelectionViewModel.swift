@@ -12,13 +12,13 @@ import Photos
 
 protocol SelectionModelProtocol {
     var action:SelectionActionProtocol? {get set}
-    func cropVideo(_ videoUrl:URL, start:Double, end:Double, completion:@escaping (URL?)->())
+    func trimVideo(_ videoUrl:URL, start:Double, end:Double)
     func getDuration(_ videoUrl:URL) -> Double
     func saveToPhotoLibrary(_ outputURL:URL, type:Type, completion:@escaping (URL?)->())
 }
 
 protocol SelectionActionProtocol {
-    
+    func afterTrimmed(_ url:URL?)
 }
 
 enum Type {
@@ -29,7 +29,7 @@ enum Type {
 class SelectionViewModel: SelectionModelProtocol {
     var action: SelectionActionProtocol?
     
-    func cropVideo(_ videoUrl: URL, start: Double, end: Double, completion:@escaping (URL?) -> ()) {
+    func trimVideo(_ videoUrl: URL, start: Double, end: Double) {
         let fileManager = FileManager.default
         let documentDirectory = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0]
 
@@ -43,7 +43,7 @@ class SelectionViewModel: SelectionModelProtocol {
             outputURL = outputURL.appendingPathComponent("\(videoUrl.lastPathComponent).mov")
         }catch let error {
             print(error)
-            completion(nil)
+            self.action?.afterTrimmed(nil)
         }
 
         guard let exportSession = AVAssetExportSession(asset: asset, presetName: AVAssetExportPresetHighestQuality) else { return }
@@ -59,16 +59,16 @@ class SelectionViewModel: SelectionModelProtocol {
             case .completed:
                 print("exported at \(outputURL)")
                 self.saveToPhotoLibrary(outputURL, type: .album) { (url) in
-                    completion(url)
+                    self.action?.afterTrimmed(url)
                 }
             case .failed:
                 print("failed \(exportSession.error.debugDescription)")
-                completion(nil)
+                self.action?.afterTrimmed(nil)
             case .cancelled:
                 print("cancelled \(exportSession.error.debugDescription)")
-                completion(nil)
+                self.action?.afterTrimmed(nil)
             default:
-                completion(nil)
+                self.action?.afterTrimmed(nil)
                 break
             }
         }

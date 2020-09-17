@@ -15,7 +15,7 @@ import Photos
 class ViewController: UIViewController, SelectionActionProtocol {
     private var viewmodel: SelectionModelProtocol
     private let lblVideoDuration = UILabel()
-    private let lblCroppedDuration = UILabel()
+    private let lblTrimmedDuration = UILabel()
     private let btnPlay = UIButton()
     private let separator = UIView()
     
@@ -86,9 +86,9 @@ class ViewController: UIViewController, SelectionActionProtocol {
             make.height.equalTo(0.5)
         }
         
-        view.addSubview(lblCroppedDuration)
-        lblCroppedDuration.alpha = 0.0
-        lblCroppedDuration.snp.makeConstraints { (make) in
+        view.addSubview(lblTrimmedDuration)
+        lblTrimmedDuration.alpha = 0.0
+        lblTrimmedDuration.snp.makeConstraints { (make) in
             make.top.equalTo(separator.snp.bottom).offset(8)
             make.right.equalTo(btnPlay.snp.right).offset(-8)
             make.left.equalTo(view.safeAreaLayoutGuide.snp.leftMargin).offset(16)
@@ -103,7 +103,7 @@ class ViewController: UIViewController, SelectionActionProtocol {
         lblVideoDuration.alpha = 0.0
         btnPlay.alpha = 0.0
         separator.alpha = 0.0
-        lblCroppedDuration.alpha = 0.0
+        lblTrimmedDuration.alpha = 0.0
         videoUrl = nil
     }
     
@@ -114,21 +114,29 @@ class ViewController: UIViewController, SelectionActionProtocol {
         lblVideoDuration.alpha = 1.0
         btnPlay.alpha = 1.0
         if duration > 30.0 {
-            self.viewmodel.cropVideo(url, start: 0, end: 30.0) { [weak self] (newUrl) in
-                guard let croppedUrl = newUrl else {return}
-                self?.videoUrl = croppedUrl
-                DispatchQueue.main.async {
-                    self?.separator.alpha = 1.0
-                    let duration = self?.viewmodel.getDuration(croppedUrl) ?? 0
-                    self?.lblCroppedDuration.text = "Cropped duration: \(duration) seconds"
-                    self?.lblCroppedDuration.alpha = 1.0
-                }
-            }
+            self.viewmodel.trimVideo(url, start: 0, end: 30.0)
         }
         
     }
     
-    @objc func didTapPlay(_ sender: UIButton){
+    func afterTrimmed(_ url: URL?) {
+        guard let trimmedUrl = url else {
+            self.popupAlert(title: "Error", msg: "We got error when try to trim the video. Please try again", action: nil)
+            return
+        }
+        self.videoUrl = trimmedUrl
+        DispatchQueue.main.async {
+            self.separator.alpha = 1.0
+            let duration = self.viewmodel.getDuration(trimmedUrl)
+            self.lblTrimmedDuration.text = "Trimmed duration: \(duration) seconds"
+            self.lblTrimmedDuration.alpha = 1.0
+            self.popupAlert(title: "Video Trimmed!", msg: "Your video has been trimmed to 30 seconds. Play the video?", action: UIAlertAction(title: "Yes", style: .default, handler: { [weak self] (action) in
+                self?.didTapPlay(nil)
+            }))
+        }
+    }
+    
+    @objc func didTapPlay(_ sender: UIButton?){
         guard let url = videoUrl else {return}
         let player = AVPlayer(url: url)
         let playerController = AVPlayerViewController()
