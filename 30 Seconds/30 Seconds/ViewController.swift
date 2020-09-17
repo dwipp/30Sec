@@ -18,9 +18,8 @@ class ViewController: UIViewController, SelectionActionProtocol {
     private let lblTrimmedDuration = UILabel()
     private let btnPlay = UIButton()
     private let separator = UIView()
-    
+    private let picker = UIImagePickerController()
     fileprivate var videoUrl:URL?
-    fileprivate let picker = UIImagePickerController()
     
     init() {
         self.viewmodel = SelectionViewModel()

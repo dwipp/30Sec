@@ -95,10 +95,10 @@
 		45C68EA22512475A00BF8BB6 /* 30 Seconds */ = {
 			isa = PBXGroup;
 			children = (
-				45C68EC62512495D00BF8BB6 /* Player */,
-				45C68EC52512493300BF8BB6 /* Selection */,
 				45C68EA32512475A00BF8BB6 /* AppDelegate.swift */,
 				45C68EA52512475A00BF8BB6 /* SceneDelegate.swift */,
+				45C68EA72512475A00BF8BB6 /* ViewController.swift */,
+				45C68EC72512498E00BF8BB6 /* SelectionViewModel.swift */,
 				45C68EA92512475A00BF8BB6 /* Main.storyboard */,
 				45C68EAC2512475B00BF8BB6 /* Assets.xcassets */,
 				45C68EAE2512475B00BF8BB6 /* LaunchScreen.storyboard */,
@@ -115,22 +115,6 @@
 				45C68EBC2512475B00BF8BB6 /* Info.plist */,
 			);
 			path = "30 SecondsTests";
-			sourceTree = "<group>";
-		};
-		45C68EC52512493300BF8BB6 /* Selection */ = {
-			isa = PBXGroup;
-			children = (
-				45C68EA72512475A00BF8BB6 /* ViewController.swift */,
-				45C68EC72512498E00BF8BB6 /* SelectionViewModel.swift */,
-			);
-			path = Selection;
-			sourceTree = "<group>";
-		};
-		45C68EC62512495D00BF8BB6 /* Player */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = Player;
 			sourceTree = "<group>";
 		};
 		E764C416C640663AA095CB85 /* Pods */ = {
