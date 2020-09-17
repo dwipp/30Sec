@@ -10,6 +10,7 @@ import UIKit
 import SnapKit
 import AVFoundation
 import AVKit
+import Photos
 
 class ViewController: UIViewController, SelectionActionProtocol {
     private var viewmodel: SelectionModelProtocol
@@ -141,37 +142,101 @@ class ViewController: UIViewController, SelectionActionProtocol {
         let alert = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
         alert.addAction(UIAlertAction(title: "Album", style: .default, handler: { [weak self] (action) in
             print("Album")
-            self?.openAlbum()
+            self?.photoLibraryPermission(type: .album)
         }))
         alert.addAction(UIAlertAction(title: "Camera", style: .default, handler: { [weak self] (action) in
             print("Camera")
-            self?.openCamera()
+            self?.photoLibraryPermission(type: .record)
         }))
         alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
         self.present(alert, animated: true, completion: nil)
     }
     
-    func openAlbum(){
-        if UIImagePickerController.isSourceTypeAvailable(.savedPhotosAlbum){
-            hideVideoProperties()
-            picker.sourceType = .savedPhotosAlbum
-            picker.mediaTypes = ["public.movie"]
-            self.present(picker, animated: true, completion: nil)
+    func openMedia(type:Type){
+        if type == .album {
+            if UIImagePickerController.isSourceTypeAvailable(.savedPhotosAlbum){
+                hideVideoProperties()
+                picker.sourceType = .savedPhotosAlbum
+                picker.mediaTypes = ["public.movie"]
+                self.present(picker, animated: true, completion: nil)
+            }else {
+                popupAlert(title: "Error", msg: "We have trouble when open your Photo Library", action: nil)
+            }
         }else {
-            
+            if UIImagePickerController.isSourceTypeAvailable(.camera){
+                hideVideoProperties()
+                picker.sourceType = .camera
+                picker.mediaTypes = ["public.movie"]
+                picker.videoMaximumDuration = 30
+                self.present(picker, animated: true, completion: nil)
+            }else {
+                popupAlert(title: "Error", msg: "We have trouble when open your Camera", action: nil)
+            }
         }
     }
     
-    func openCamera(){
-        if UIImagePickerController.isSourceTypeAvailable(.camera){
-            hideVideoProperties()
-            picker.sourceType = .camera
-            picker.mediaTypes = ["public.movie"]
-            picker.videoMaximumDuration = 30
-            self.present(picker, animated: true, completion: nil)
+    func cameraPermission(){
+        let videoPermission = AVCaptureDevice.authorizationStatus(for: .video)
+        let audioPermission = AVCaptureDevice.authorizationStatus(for: .audio)
+        if videoPermission == .denied || audioPermission == .denied {
+            permissionDeniedHandler()
         }else {
-            
+            openMedia(type: .record)
         }
+    }
+    
+    func photoLibraryPermission(type:Type){
+        let status = PHPhotoLibrary.authorizationStatus()
+        switch status {
+        case .authorized:
+            if type == .album {
+                openMedia(type: type)
+            }else {
+                cameraPermission()
+            }
+            break
+        case .denied:
+            permissionDeniedHandler()
+            break
+        case .notDetermined:
+            PHPhotoLibrary.requestAuthorization { [weak self] (newStatus) in
+                if newStatus == .authorized {
+                    DispatchQueue.main.async {
+                        if type == .album {
+                            self?.openMedia(type: type)
+                        }else {
+                            self?.cameraPermission()
+                        }
+                    }
+                }
+            }
+            break
+        default:
+            break
+        }
+    }
+    
+    private func permissionDeniedHandler(){
+        popupAlert(title: "Permission denied", msg: "Please open your setting to give us permission before use this feature", action: UIAlertAction(title: "Settings", style: .default, handler: { (action) in
+            guard let settingsUrl = URL(string: UIApplication.openSettingsURLString) else {
+                return
+            }
+
+            if UIApplication.shared.canOpenURL(settingsUrl) {
+                UIApplication.shared.open(settingsUrl, completionHandler: { (success) in
+                    print("Settings opened: \(success)")
+                })
+            }
+        }))
+    }
+    
+    func popupAlert(title:String?, msg:String, action:UIAlertAction?){
+        let alert = UIAlertController(title: title, message: msg, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "Close", style: .cancel, handler: nil))
+        if let newAction = action {
+            alert.addAction(newAction)
+        }
+        present(alert, animated: true, completion: nil)
     }
 }
 
